@@ -12,14 +12,12 @@ const projectName = 'blog_tutorial'
 
 function readKeyfile(keypairFile) {
     let kf = fs.readFileSync(keypairFile)
-    console.log(JSON.parse(kf.toString()))
     let parsed = JSON.parse(kf.toString())
     kf = new Uint8Array(parsed)
     const keypair = new Keypair({
         secretKey: kf.slice(0,32),
         publicKey: kf.slice(32,64),
     })
-    console.log(keypair.publicKey.toString())
     return keypair
 }
 
@@ -34,20 +32,14 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
 ;(async() => {
 
     let method
-    let programAuthorityKeypair
-    let programId
+    // let programId
     let programKeypair
-
-    programKeypair = readKeyfile(programAuthorityKeypairFile)
-    console.log('publicKey')
-    console.log(programKeypair.publicKey)
-    programId = programKeypair.publicKey.toString()
 
     if (!fs.existsSync(programAuthorityKeypairFile)) {
         //doesnt exist
         spawn.sync('anchor', ['build'], { stdio: 'inherit' })
 
-        programAuthorityKeypair = new Keypair()
+        let programAuthorityKeypair = new Keypair()
         // 2 is max SOL that can be airdropped
         let signature = await connection.requestAirdrop(programAuthorityKeypair.publicKey, LAMPORTS_PER_SOL * 2)
         await connection.confirmTransaction(signature, 'confirmed')
@@ -66,7 +58,8 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
 
         // method = ['deploy']
 
-    } else {
+    } 
+    // else {
         // does exist
         // "upgrade" command has been deprecated since tutorial was made. Now both deploy and upgrade use saem "deploy" command
         // method = ['upgrade']
@@ -80,8 +73,11 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
         //     // '--program-id',
         //     // programId
         // ]
-
-    }
+    // }
+    programKeypair = readKeyfile(programAuthorityKeypairFile)
+    console.log('publicKey')
+    console.log(programKeypair.publicKey.toString())
+    // programId = programKeypair.publicKey.toString()
     
     method = ['deploy']
 
