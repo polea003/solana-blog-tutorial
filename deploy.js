@@ -10,6 +10,19 @@ const __dirname = dirname(__filename)
 
 const projectName = 'blog_tutorial'
 
+function readKeyfile(keypairFile) {
+    let kf = fs.readFileSync(keypairFile)
+    console.log(JSON.parse(kf.toString()))
+    let parsed = JSON.parse(kf.toString())
+    kf = new Uint8Array(parsed)
+    const keypair = new Keypair({
+        secretKey: kf.slice(0,32),
+        publicKey: kf.slice(32,64),
+    })
+    console.log(keypair.publicKey.toString())
+    return keypair
+}
+
 const programAuthorityKeyfileName = 'deploy/programauthority-keypair.json'
 
 const programAuthorityKeypairFile = path.resolve(
@@ -21,26 +34,25 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
 ;(async() => {
 
     let method
+    let programAuthorityKeypair
+    let programId
+    let programKeypair
+
+    programKeypair = readKeyfile(programAuthorityKeypairFile)
+    console.log('publicKey')
+    console.log(programKeypair.publicKey)
+    programId = programKeypair.publicKey.toString()
 
     if (!fs.existsSync(programAuthorityKeypairFile)) {
         //doesnt exist
         spawn.sync('anchor', ['build'], { stdio: 'inherit' })
 
-        let programAuthorityKeypair = new Keypair()
+        programAuthorityKeypair = new Keypair()
+        // 2 is max SOL that can be airdropped
         let signature = await connection.requestAirdrop(programAuthorityKeypair.publicKey, LAMPORTS_PER_SOL * 2)
         await connection.confirmTransaction(signature, 'confirmed')
 
-        // let confirmation = await connection.requestAirdrop(programAuthorityKeypair.publicKey, LAMPORTS_PER_SOL );
-
-        // let result = await connection.confirmTransaction(confirmation, 'confirmed');
-
-
         const balance = await connection.getBalance(programAuthorityKeypair.publicKey, 'confirmed')
-        console.log('\n\n\n')
-        console.log('balance: ')
-        console.log(balance / LAMPORTS_PER_SOL)
-        console.log('\n\n\n')
-
 
         console.log('\n\ncreated keypair\n')
         console.log(`\n\n Saving Keypair public key:  ${programAuthorityKeypair.publicKey}\n` )
@@ -52,14 +64,26 @@ const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
             )}]`
         )
 
-        method = ['deploy']
+        // method = ['deploy']
 
     } else {
         // does exist
-        method = ['deploy']
+        // "upgrade" command has been deprecated since tutorial was made. Now both deploy and upgrade use saem "deploy" command
         // method = ['upgrade']
+        
+        // programAuthorityKeypair = readKeyfile(programAuthorityKeypairFile)
+
+        // method = [
+        //     'deploy',
+        //     // `${programAuthorityKeypairFile}`,
+        //     // `./target/deploy/${projectName}.so`,
+        //     // '--program-id',
+        //     // programId
+        // ]
 
     }
+    
+    method = ['deploy']
 
     spawn.sync(
         'anchor',
